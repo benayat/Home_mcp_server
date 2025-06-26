@@ -1,0 +1,548 @@
+openapi: 3.0.3
+info:
+  title: MCP Gateway Server API
+  description: |
+    REST API interface for the Model Context Protocol (MCP) Gateway Server.
+    
+    This unified server provides both mathematical calculations and data visualization 
+    capabilities through a single interface, making it easy for clients to integrate 
+    mathematical and visualization tools.
+    
+    ## Features
+    - **15 Mathematical & Visualization Tools**
+    - **Educational Resources**
+    - **Step-by-step explanations**
+    - **Rich error handling**
+    - **MCP Protocol compliant**
+    
+    ## Tool Categories
+    - **Math**: arithmetic, equations, geometry, trigonometry, etc.
+    - **Visualization**: charts, plots, statistical analysis
+    
+  version: 1.0.0
+  contact:
+    name: MCP Gateway Server
+    url: https://github.com/your-org/mcp-servers
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://api.your-domain.com
+    description: Production server
+
+tags:
+  - name: Math
+    description: Mathematical calculations and problem solving
+  - name: Visualization  
+    description: Data visualization and chart generation
+  - name: Resources
+    description: Educational resources and learning materials
+  - name: Server
+    description: Server information and health
+
+paths:
+  /health:
+    get:
+      tags: [Server]
+      summary: Health check
+      description: Check if the server is running and healthy
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+  /info:
+    get:
+      tags: [Server]
+      summary: Server information
+      description: Get server capabilities and information
+      responses:
+        '200':
+          description: Server information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerInfo'
+
+  /tools:
+    get:
+      tags: [Server]
+      summary: List available tools
+      description: Get a list of all available mathematical and visualization tools
+      responses:
+        '200':
+          description: List of available tools
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tools:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tool'
+
+  /tools/{toolName}:
+    post:
+      tags: [Math, Visualization]
+      summary: Execute a tool
+      description: Execute a specific mathematical or visualization tool with provided arguments
+      parameters:
+        - name: toolName
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Name of the tool to execute
+          example: basic_arithmetic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Tool-specific arguments
+              example:
+                operation: "add"
+                a: 15
+                b: 27
+      responses:
+        '200':
+          description: Tool execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolResult'
+        '400':
+          description: Invalid arguments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Tool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Math Tools
+  /tools/basic_arithmetic:
+    post:
+      tags: [Math]
+      summary: Basic arithmetic operations
+      description: Perform basic arithmetic operations (add, subtract, multiply, divide)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BasicArithmeticRequest'
+      responses:
+        '200':
+          description: Arithmetic result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MathResult'
+
+  /tools/solve_equations:
+    post:
+      tags: [Math]
+      summary: Solve equations
+      description: Solve linear and quadratic equations with step-by-step explanations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolveEquationRequest'
+      responses:
+        '200':
+          description: Equation solution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MathResult'
+
+  /tools/geometry:
+    post:
+      tags: [Math]
+      summary: Geometry calculations
+      description: Calculate geometric properties (areas, distances, slopes, etc.)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeometryRequest'
+      responses:
+        '200':
+          description: Geometry calculation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MathResult'
+
+  # Visualization Tools
+  /tools/create_chart:
+    post:
+      tags: [Visualization]
+      summary: Create charts
+      description: Create various types of charts and graphs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChartRequest'
+      responses:
+        '200':
+          description: Chart creation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisualizationResult'
+
+  /tools/plot_function:
+    post:
+      tags: [Visualization]
+      summary: Plot mathematical functions
+      description: Plot mathematical functions with customizable ranges
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlotFunctionRequest'
+      responses:
+        '200':
+          description: Function plot result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisualizationResult'
+
+  # Resources
+  /resources:
+    get:
+      tags: [Resources]
+      summary: List educational resources
+      description: Get a list of available educational resources and learning materials
+      responses:
+        '200':
+          description: List of resources
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resources:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Resource'
+
+  /resources/{resourceId}:
+    get:
+      tags: [Resources]
+      summary: Get educational resource
+      description: Retrieve content of a specific educational resource
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Resource identifier (URI)
+          example: "math://concepts/elementary"
+      responses:
+        '200':
+          description: Resource content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceContent'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    ServerInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "mcp-gateway-server"
+        version:
+          type: string
+          example: "1.0.0"
+        description:
+          type: string
+          example: "Unified MCP server for mathematics and data visualization"
+        protocolVersion:
+          type: string
+          example: "2024-11-05"
+        capabilities:
+          type: object
+          properties:
+            tools:
+              type: object
+              properties:
+                listChanged:
+                  type: boolean
+            resources:
+              type: object
+              properties:
+                subscribe:
+                  type: boolean
+                listChanged:
+                  type: boolean
+
+    Tool:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "basic_arithmetic"
+        description:
+          type: string
+          example: "Perform basic arithmetic operations"
+        inputSchema:
+          type: object
+          description: JSON schema for tool input parameters
+
+    ToolResult:
+      type: object
+      properties:
+        result:
+          description: Tool execution result
+        explanation:
+          type: string
+          description: Human-readable explanation
+        steps:
+          type: array
+          items:
+            type: string
+          description: Step-by-step solution
+
+    MathResult:
+      allOf:
+        - $ref: '#/components/schemas/ToolResult'
+        - type: object
+          properties:
+            result:
+              oneOf:
+                - type: number
+                - type: array
+                - type: object
+              example: 42
+
+    VisualizationResult:
+      allOf:
+        - $ref: '#/components/schemas/ToolResult'
+        - type: object
+          properties:
+            result:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                file_path:
+                  type: string
+                  description: Path to generated visualization file
+
+    Resource:
+      type: object
+      properties:
+        uri:
+          type: string
+          example: "math://concepts/elementary"
+        name:
+          type: string
+          example: "Elementary Math Concepts"
+        description:
+          type: string
+          example: "Basic arithmetic, place value, simple fractions"
+        mimeType:
+          type: string
+          example: "text/plain"
+
+    ResourceContent:
+      type: object
+      properties:
+        contents:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                example: "text"
+              text:
+                type: string
+                description: Resource content text
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: integer
+          description: Error code
+        details:
+          type: string
+          description: Additional error details
+
+    # Request Schemas
+    BasicArithmeticRequest:
+      type: object
+      required: [operation, a, b]
+      properties:
+        operation:
+          type: string
+          enum: [add, subtract, multiply, divide]
+          example: "add"
+        a:
+          type: number
+          example: 15
+        b:
+          type: number
+          example: 27
+
+    SolveEquationRequest:
+      type: object
+      required: [equation_type, a, b]
+      properties:
+        equation_type:
+          type: string
+          enum: [linear, quadratic]
+          example: "quadratic"
+        a:
+          type: number
+          example: 1
+        b:
+          type: number
+          example: -5
+        c:
+          type: number
+          example: 6
+          description: "Required for quadratic equations"
+
+    GeometryRequest:
+      type: object
+      required: [operation, values]
+      properties:
+        operation:
+          type: string
+          enum: [area_circle, area_rectangle, area_triangle, pythagorean, distance, slope, midpoint]
+          example: "area_circle"
+        values:
+          type: array
+          items:
+            type: number
+          example: [5]
+          description: "Values needed for the operation"
+
+    CreateChartRequest:
+      type: object
+      required: [chart_type, data]
+      properties:
+        chart_type:
+          type: string
+          enum: [line, bar, scatter, pie, histogram, box]
+          example: "line"
+        data:
+          type: object
+          description: "Chart data (format depends on chart type)"
+          example:
+            x: [1, 2, 3, 4, 5]
+            y: [2, 4, 6, 8, 10]
+        title:
+          type: string
+          example: "Sample Line Chart"
+        xlabel:
+          type: string
+          example: "X Values"
+        ylabel:
+          type: string
+          example: "Y Values"
+
+    PlotFunctionRequest:
+      type: object
+      required: [expression]
+      properties:
+        expression:
+          type: string
+          example: "x**2 - 4*x + 3"
+          description: "Mathematical expression to plot"
+        x_range:
+          type: array
+          items:
+            type: number
+          example: [-10, 10]
+          description: "Range for x values [min, max]"
+        num_points:
+          type: integer
+          example: 1000
+          description: "Number of points to plot"
+        title:
+          type: string
+          example: "Quadratic Function"
+
+  examples:
+    BasicArithmeticExample:
+      summary: Addition example
+      value:
+        operation: "add"
+        a: 15
+        b: 27
+
+    QuadraticEquationExample:
+      summary: Quadratic equation example
+      value:
+        equation_type: "quadratic"
+        a: 1
+        b: -5
+        c: 6
+
+    LineChartExample:
+      summary: Line chart example
+      value:
+        chart_type: "line"
+        data:
+          x: [1, 2, 3, 4, 5]
+          y: [2, 4, 6, 8, 10]
+        title: "Linear Function"
+        xlabel: "x"
+        ylabel: "y"
+
+    FunctionPlotExample:
+      summary: Function plot example
+      value:
+        expression: "x**2 - 4*x + 3"
+        x_range: [-2, 6]
+        title: "Quadratic Function"

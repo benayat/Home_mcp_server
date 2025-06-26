@@ -1,0 +1,144 @@
+version: '3.8'
+
+services:
+  mcp-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-now}
+        VERSION: ${VERSION:-1.0.0}
+    image: mcp-gateway-server:${VERSION:-latest}
+    container_name: mcp-gateway-server
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MCP_SERVER_TYPE=gateway
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    
+    # Volumes for persistence (optional)
+    volumes:
+      - ./logs:/app/logs:rw
+      - ./plots:/app/plots:rw
+    
+    # Network configuration
+    networks:
+      - mcp-network
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.path.insert(0, '.'); from mcp_servers.gateway_server import MCPGatewayServer; print('healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Individual servers (optional)
+  mcp-math:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mcp-gateway-server:${VERSION:-latest}
+    container_name: mcp-math-server
+    restart: unless-stopped
+    command: ["python", "-m", "mcp_servers.math_server"]
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MCP_SERVER_TYPE=math
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    networks:
+      - mcp-network
+    profiles:
+      - individual-servers
+
+  mcp-visualization:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mcp-gateway-server:${VERSION:-latest}
+    container_name: mcp-visualization-server
+    restart: unless-stopped
+    command: ["python", "-m", "mcp_servers.visualization_server"]
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MCP_SERVER_TYPE=visualization
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./plots:/app/plots:rw
+    networks:
+      - mcp-network
+    profiles:
+      - individual-servers
+
+  # REST API Server (optional)
+  mcp-rest-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mcp-gateway-server:${VERSION:-latest}
+    container_name: mcp-rest-api-server
+    restart: unless-stopped
+    command: ["python", "-m", "uvicorn", "mcp_servers.rest_api:app", "--host", "0.0.0.0", "--port", "8080"]
+    
+    # Port mapping for REST API
+    ports:
+      - "8080:8080"
+    
+    # Environment variables
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MCP_SERVER_TYPE=rest-api
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    
+    # Volumes for persistence
+    volumes:
+      - ./logs:/app/logs:rw
+      - ./plots:/app/plots:rw
+    
+    # Network configuration
+    networks:
+      - mcp-network
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    profiles:
+      - rest-api
+
+networks:
+  mcp-network:
+    driver: bridge
+    name: mcp-network
+
+volumes:
+  mcp-logs:
+    driver: local
+  mcp-plots:
+    driver: local
